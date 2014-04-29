@@ -1,7 +1,6 @@
 
 module Main where
 
-import Control.Monad.IO.Class
 import System.Random
 import Control.Monad
 import Control.Monad.Trans.State
@@ -9,7 +8,6 @@ import Data.Array
 import Control.Applicative
 import Control.Arrow
 import Graphics.Gloss.Interface.Pure.Game
-import Graphics.Gloss.Interface.IO.Game
 
 data Block = Hidden Mass
            | Open Mass
@@ -33,18 +31,18 @@ around (x, y) = [(x + 1, y - 1), (x + 1, y), (x + 1, y + 1),
                  (x - 1, y - 1), (x - 1, y), (x - 1, y + 1)]
 
 newField :: [Pos] -> Field
-newField xs = init $ accumArray seq (Hidden (Num 0)) ((0, 0), (width+2, height+2)) (field xs []) where
+newField ps = initial $ accumArray seq (Hidden (Num 0)) ((0, 0), (width+2, height+2)) (field ps []) where
     field (x:xs) list | length list == mine = list
                       | otherwise = if elem x (map fst list) 
                                         then field xs list
                                         else field xs $ (x, Hidden Bomb) : list
-    init array = array // do
+    initial ary = ary // do
         x <- [1..width]
         y <- [1..height]
-        guard $ array ! (x, y) /= Hidden Bomb
+        guard $ ary ! (x, y) /= Hidden Bomb
         let num = length $ do
             (px, py) <- around (x, y)
-            guard $ array ! (px, py) == Hidden Bomb
+            guard $ ary ! (px, py) == Hidden Bomb
         return ((x, y), Hidden $ Num num)
 
 update :: Float -> State Field ()
@@ -61,7 +59,7 @@ event (EventKey (MouseButton RightButton) Down _ p) = do
         case ary ! pos of
             Hidden n -> put $ ary // [(pos, Flag n)]
             Flag n -> put $ ary // [(pos, Hidden n)]
-            Open n -> return ()
+            Open _ -> return ()
 event _ = return ()
 
 vectors :: [Pos]
